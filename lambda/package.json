@@ -1,0 +1,31 @@
+{
+  "name": "bagels-game",
+  "version": "2.0.0",
+  "description": "Number guessing game for Alexa",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "Alexa",
+    "game",
+    "skill"
+  ],
+  "author": "Amazon.com",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "ask-sdk": "^2.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "gulp": "^3.9.1",
+    "gulp-load-plugins": "^1.5.0",
+    "gulp-mocha": "^6.0.0",
+    "mocha": "^5.2.0",
+    "yargs": "^12.0.2"
+  }
+}
