@@ -38,6 +38,18 @@
           "slots": [{
               "name": "number", "type": "AMAZON.NUMBER"
               }]
+        },
+        {
+          "name": "WhatWasLastGuessIntent",
+          "samples": [
+            "what was the last guess",
+            "what was my last guess",
+            "what was the last number",
+            "what was my last number",
+            "last guess",
+            "last number",
+            "last"
+          ]
         }
       ]
     }

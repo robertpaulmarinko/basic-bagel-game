@@ -3,14 +3,14 @@
     "publishingInformation": {
       "locales": {
         "en-US": {
-          "summary": "Guess a three digit number, and Alexa will give you hints about what digits are correct.",
+          "summary": "Classic Bagel number guessing game.  Guess a three digit number, and Alexa will give you hints about what digits are correct.",
           "examplePhrases": [
             "Alexa open basic bagels game",
             "Alexa start basic bagels game",
-            "Alexa ask basic bagels game is it {number}"
+            "Alexa ask basic bagels game"
           ],
           "name": "Basic bagels Game",
-          "description": "Guess a number, and Alexa will tell you Pico if one digit is correct, but in the wrong place, Fermi if one digit is in the correct place, or bagels if no digit is correct.  She will also tell you how many times you have played. "
+          "description": "Play the class Bagel number game!  Guess a three digit number (such as one hundred and three or four five six).  Alexa will say 'Pico' if one digit is correct, but in the wrong place, 'Fermi' if one digit is correct and in the correct place, or 'Bagels' if no digit is correct.  Then guess again until you find the correct number.  She will also tell you how many times you have played."
         }
       },
       "isAvailableWorldwide": true,

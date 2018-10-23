@@ -30,9 +30,10 @@ const LaunchRequest = {
 
     attributesManager.setSessionAttributes(attributes);
 
-    const speechOutput = `Welcome to the bagels guessing game. You have played ${attributes.gamesPlayed.toString()} times. would you like to play?`;
+    const speechOutput = `Welcome to the Bagels guessing game. You have played ${attributes.gamesPlayed.toString()} times. would you like to play?`;
+    const cardOutput = "Welcome to Bagels.  Would you like to play?"
     const reprompt = 'Say yes to start the game or no to quit.';
-    return speakWithResponse(speechOutput, reprompt, responseBuilder);
+    return speakWithResponse(speechOutput, cardOutput, reprompt, responseBuilder);
   },
 };
 
@@ -48,7 +49,7 @@ const ExitHandler = {
     const speechOutput = 'Thanks for playing!';
     return handlerInput.responseBuilder
       .speak(speechOutput)
-      .cardRenderer(SKILL_NAME, speechOutput)
+      .withSimpleCard(SKILL_NAME, speechOutput)
       .getResponse();
   },
 };
@@ -74,9 +75,11 @@ const HelpIntent = {
             ' Pico if one digit is correct, but in the wrong place,' +
             ' Fermi if one digit is in the correct place, or' +
             ' bagels if no digit is correct.';
+    const cardOutput = "Guess a three digit number";
     const reprompt = 'Try saying a number.';
 
-    return speakWithResponse(speechOutput, reprompt, handlerInput.responseBuilder);
+
+    return speakWithResponse(speechOutput, cardOutput, reprompt, handlerInput.responseBuilder);
   },
 };
 
@@ -103,7 +106,7 @@ const YesIntent = {
     sessionAttributes.gameState = 'STARTED';
     sessionAttributes.guessNumber =  numberUtil.getRandomNumber();
 
-    return speakWithResponse('Great! Try saying a three digit number to start the game.', 'Try saying a number.', responseBuilder);
+    return speakWithResponse('Great! Try saying a three digit number to start the game.', 'Say a three digit number to start the game.', 'Try saying a number.', responseBuilder);
   },
 };
 
@@ -136,7 +139,7 @@ const NoIntent = {
     const speechOutput = 'Ok, see you next time!';
     return responseBuilder
           .speak(speechOutput)
-          .cardRenderer(SKILL_NAME, speechOutput)
+          .withSimpleCard(SKILL_NAME, speechOutput)
           .getResponse();
   },
 };
@@ -147,7 +150,7 @@ const UnhandledIntent = {
   },
   handle(handlerInput) {
     const outputSpeech = 'Say yes to continue, or no to end the game.';
-    return speakWithResponse(outputSpeech, outputSpeech, handlerInput.responseBuilder);
+    return speakWithResponse(outputSpeech, outputSpeech, outputSpeech, handlerInput.responseBuilder);
   },
 };
 
@@ -178,26 +181,58 @@ const NumberGuessIntent = {
     }
 
     if (guessString.length !== 3) {
-      return speakWithResponse(`Try guessing a three digit number.`, 'Try saying a three digit number.', responseBuilder);
+      return speakWithResponse(`Try guessing a three digit number.`, `Try guessing a three digit number.`, 'Try saying a three digit number.', responseBuilder);
     } else if (guessString === targetNum) {
         sessionAttributes.gamesPlayed += 1;
         sessionAttributes.gameState = 'ENDED';
         attributesManager.setPersistentAttributes(sessionAttributes);
         await attributesManager.savePersistentAttributes();
-        return speakWithResponse(`${guessString} is correct! Would you like to play a new game?`, 'Say yes to start a new game, or no to end the game.', responseBuilder);
+        return speakWithResponse(`${guessString} is correct! Would you like to play a new game?`, 'Correct, play again?',  'Say yes to start a new game, or no to end the game.', responseBuilder);
     } else {
+        sessionAttributes.lastGuess = guessString;
+        await attributesManager.savePersistentAttributes();
         if (numberUtil.guessHasDuplicateDigits(guessString)) {
-          return speakWithResponse(`Oh, I forgot to tell your that the number I have in mind has no two digits the same.`, 'Try a different number.', responseBuilder);
+          return speakWithResponse(`Oh, I forgot to tell your that the number I have in mind has no two digits the same.`, 'No two digits can be the same',  'Try a different number.', responseBuilder);
         } else {
             var response = numberUtil.getResponse(guessString, targetNum);
-            return speakWithResponse(response, 'Try guessing a different number.', responseBuilder);
+            return speakWithResponse(response, response, 'Try guessing a different number.', responseBuilder);
         }
     }
 
-    return speakWithResponse('Sorry, I didn\'t get that. Try saying a number.', 'Try guessing a different number.', handlerInput.responseBuilder);
+    return speakWithResponse('Sorry, I didn\'t get that. Try saying a number.', 'Sorry, I didn\'t get that. Try saying a number.', 'Try guessing a different number.', handlerInput.responseBuilder);
   },
 };
 
+const WhatWasLastGuessIntent = {
+  canHandle(handlerInput) {
+    // handle numbers only during a game
+    let isCurrentlyPlaying = false;
+    const request = handlerInput.requestEnvelope.request;
+    const attributesManager = handlerInput.attributesManager;
+    const sessionAttributes = attributesManager.getSessionAttributes();
+
+    if (sessionAttributes.gameState &&
+        sessionAttributes.gameState === 'STARTED') {
+      isCurrentlyPlaying = true;
+    }
+
+    return isCurrentlyPlaying && request.type === 'IntentRequest' && request.intent.name === 'WhatWasLastGuessIntent';
+  },
+  async handle(handlerInput) {
+    const { attributesManager, responseBuilder } = handlerInput;
+
+    const sessionAttributes = attributesManager.getSessionAttributes();
+    const lastGuess = sessionAttributes.lastGuess;
+
+    if (lastGuess) {
+      const speachOutput = "Your last guess was " + lastGuess;
+      return speakWithResponse(speachOutput, lastGuess, 'Try guessing again.', responseBuilder);
+    } else {
+      return speakWithResponse("You have not made a guess.", "No guess", 'Try guessing again.', responseBuilder);
+    }
+  },
+
+}
 
 const ErrorHandler = {
   canHandle() {
@@ -207,7 +242,7 @@ const ErrorHandler = {
     console.log(`Error handled: ${error.message}`);
 
     const speechOutput = 'Sorry, I can\'t understand the command. Please say again.';
-    return speakWithResponse(speechOutput, 'Sorry, I can\'t understand the command. Please say again.', handlerInput.responseBuilder);
+    return speakWithResponse(speechOutput, speechOutput, speechOutput, handlerInput.responseBuilder);
   },
 };
 
@@ -231,18 +266,18 @@ const FallbackHandler = {
     if (sessionAttributes.gameState &&
         sessionAttributes.gameState === 'STARTED') {
       // currently playing
-      return speakWithResponse(FALLBACK_MESSAGE_DURING_GAME, FALLBACK_REPROMPT_DURING_GAME, handlerInput.responseBuilder);
+      return speakWithResponse(FALLBACK_MESSAGE_DURING_GAME, FALLBACK_REPROMPT_DURING_GAME, FALLBACK_REPROMPT_DURING_GAME, handlerInput.responseBuilder);
     }
 
     // not playing
-    return speakWithResponse(FALLBACK_MESSAGE_OUTSIDE_GAME, FALLBACK_REPROMPT_OUTSIDE_GAME, handlerInput.responseBuilder);
+    return speakWithResponse(FALLBACK_MESSAGE_OUTSIDE_GAME, FALLBACK_REPROMPT_OUTSIDE_GAME, FALLBACK_REPROMPT_OUTSIDE_GAME, handlerInput.responseBuilder);
   },
 };
 
-function speakWithResponse(outputText, reprompt, responseBuilder) {
+function speakWithResponse(outputText, cardText, reprompt, responseBuilder) {
   return responseBuilder
     .speak(outputText)
-    .withSimpleCard(SKILL_NAME, outputText)
+    .withSimpleCard(SKILL_NAME, cardText)
     .reprompt(reprompt)
     .getResponse();
 }
@@ -258,6 +293,7 @@ exports.handler = skillBuilder
     YesIntent,
     NoIntent,
     NumberGuessIntent,
+    WhatWasLastGuessIntent,
     FallbackHandler,
     UnhandledIntent,
   )
